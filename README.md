@@ -19,7 +19,7 @@ pip3 install -r requirements.txt
 
 ## Usage
 ```bash
-python eioc.py <file_path>
+python3 eioc.py <file_path>
 ```
 
 Example:
