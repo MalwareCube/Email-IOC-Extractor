@@ -17,7 +17,15 @@ def read_file(file_path):
 
 def extract_ips(content):
     ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
-    return list(set(re.findall(ip_pattern, content)))
+    ips = re.findall(ip_pattern, content)
+    valid_ips = []
+    for ip in ips:
+        try:
+            ipaddress.ip_address(ip)
+            valid_ips.append(ip)
+        except ValueError:
+            pass
+    return list(set(valid_ips))
 
 def extract_urls(content):
     url_pattern = r'https?:\/\/(?:[\w\-]+\.)+[a-z]{2,}(?:\/[\w\-\.\/?%&=]*)?'
