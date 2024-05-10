@@ -2,22 +2,33 @@ import re
 import sys
 import quopri
 import hashlib
-import email
-import requests
 import ipaddress
+import requests
+import email
 
 def read_file(file_path):
     with open(file_path, 'rb') as file:
         content = file.read()
-    try:
-        content = content.decode('utf-8')
-    except UnicodeDecodeError:
-        content = content.decode('latin-1')
-    return content
+    parser = email.parser.BytesParser()
+    msg = parser.parsebytes(content)
+    return msg
 
-def extract_ips(content):
-    ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
-    ips = re.findall(ip_pattern, content)
+def extract_ips(email_message):
+    ips = set()
+    
+    # Extract IP addresses from headers
+    for header_name, header_value in email_message.items():
+        ips.update(re.findall(r'\b(?:\d{1,3}\.){3}\d{1,3}\b', header_value))
+    
+    # Extract IP addresses from email body
+    for part in email_message.walk():
+        content_type = part.get_content_type()
+        if content_type == 'text/plain' or content_type == 'text/html':
+            payload = part.get_payload(decode=True)
+            if isinstance(payload, bytes):
+                payload = payload.decode('utf-8', errors='ignore')
+            ips.update(re.findall(r'\b(?:\d{1,3}\.){3}\d{1,3}\b', payload))
+    
     valid_ips = []
     for ip in ips:
         try:
@@ -27,9 +38,16 @@ def extract_ips(content):
             pass
     return list(set(valid_ips))
 
-def extract_urls(content):
-    url_pattern = r'https?:\/\/(?:[\w\-]+\.)+[a-z]{2,}(?:\/[\w\-\.\/?%&=]*)?'
-    return list(set(re.findall(url_pattern, content)))
+def extract_urls(email_message):
+    urls = set()
+    for part in email_message.walk():
+        content_type = part.get_content_type()
+        if content_type == 'text/plain' or content_type == 'text/html':
+            payload = part.get_payload(decode=True)
+            if isinstance(payload, bytes):
+                payload = payload.decode('utf-8', errors='ignore')
+            urls.update(re.findall(r'https?:\/\/(?:[\w\-]+\.)+[a-z]{2,}(?:\/[\w\-\.\/?%&=]*)?', payload))
+    return list(urls)
 
 def defang_ip(ip):
     return ip.replace('.', '[.]')
@@ -81,20 +99,24 @@ def ip_lookup(ip):
     else:
         return None
 
-def extract_headers(content):
-    headers = {
-        "Date": re.search(r"Date: (.+?)\n", content),
-        "Subject": re.search(r"Subject: (.+?)\n", content),
-        "To": re.search(r"To: (.+?)\n", content),
-        "From": re.search(r"From: (.+?)\n", content),
-        "Reply-To": re.search(r"Reply-To: (.+?)\n", content),
-        "Return-Path": re.search(r"Return-Path: (.+?)\n", content),
-        "Message-ID": re.search(r"Message-ID: (.+?)\n", content),
-        "X-Originating-IP": re.search(r"X-Originating-IP: (.+?)\n", content),
-        "X-Sender-IP": re.search(r"X-Sender-IP: (.+?)\n", content),
-        "Authentication-Results": re.search(r"Authentication-Results: (.+?)\n((?:.+\n)+)", content)
-    }
-    return {key: match.group(1) if match else "" for key, match in headers.items()}
+def extract_headers(email_message):
+    headers_to_extract = [
+        "Date",
+        "Subject",
+        "To",
+        "From",
+        "Reply-To",
+        "Return-Path",
+        "Message-ID",
+        "X-Originating-IP",
+        "X-Sender-IP",
+        "Authentication-Results"
+    ]
+    headers = {}
+    for key in email_message.keys():
+        if key in headers_to_extract:
+            headers[key] = email_message[key]
+    return headers
 
 def extract_attachments(email_message):
     attachments = []
@@ -114,11 +136,10 @@ def extract_attachments(email_message):
     return attachments
 
 def main(file_path):
-    content = read_file(file_path)
-    email_message = email.message_from_string(content)
-    ips = extract_ips(content)
-    urls = extract_urls(content)
-    headers = extract_headers(content)
+    email_message = read_file(file_path)
+    ips = extract_ips(email_message)
+    urls = extract_urls(email_message)
+    headers = extract_headers(email_message)
     attachments = extract_attachments(email_message)
 
     print("Extracted IP Addresses:")
@@ -139,8 +160,7 @@ def main(file_path):
     print("\nExtracted Headers:")
     print("====================================")
     for key, value in headers.items():
-        if value:
-            print(f"{key}: {value}")
+        print(f"{key}: {value}")
 
     print("\nExtracted Attachments:")
     print("====================================")
