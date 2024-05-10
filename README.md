@@ -38,7 +38,7 @@ hxxps[://]apply-submite[.]vercel[.]app/
 Extracted Headers:
 ====================================
 Date: Mon, 31 Oct 2022 11:53:21 +0300
-Subject: =?UTF-8?B?4oC877iP8J+UlCBJbmZvcm1hdGlvbiBpbiBhdHRhY2htZW50?=
+Subject: [Action required] Verify your info to continue using your account
 To: undisclosed-recipients:;
 From: Ropo12g Gaming <jodykrier60@gmail.com>
 Return-Path: jodykrier60@gmail.com
