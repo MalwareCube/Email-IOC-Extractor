@@ -82,22 +82,26 @@ def is_reserved_ip(ip):
 def ip_lookup(ip):
     if is_reserved_ip(ip):
         return None
-    
-    url = f"https://ipinfo.io/{ip}/json"
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        return {
-            'IP': data.get('ip', ''),
-            'City': data.get('city', ''),
-            'Region': data.get('region', ''),
-            'Country': data.get('country', ''),
-            'Location': data.get('loc', ''),
-            'ISP': data.get('org', ''),
-            'Postal Code': data.get('postal', '')
-        }
-    else:
-        return None
+
+    try:
+        url = f"https://ipinfo.io/{ip}/json"
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            return {
+                'IP': data.get('ip', ''),
+                'City': data.get('city', ''),
+                'Region': data.get('region', ''),
+                'Country': data.get('country', ''),
+                'Location': data.get('loc', ''),
+                'ISP': data.get('org', ''),
+                'Postal Code': data.get('postal', '')
+            }
+    except (requests.RequestException, ValueError) as e:
+        # Log the error if needed or simply pass
+        pass
+
+    return None
 
 def extract_headers(email_message):
     headers_to_extract = [
