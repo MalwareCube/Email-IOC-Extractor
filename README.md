@@ -64,7 +64,7 @@ This tool is intended for analysis and research purposes only. Usage should comp
 Contributions, bug reports, and feature requests are welcome. Feel free to open an issue or submit a pull request on GitHub.
 
 ## License:
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the GNU General Public License. See the LICENSE file for details.
 
 ## Acknowledgments:
 Special thanks to [ipinfo.io](https://ipinfo.io) for providing IP geolocation data.
